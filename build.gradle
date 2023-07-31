@@ -1,0 +1,71 @@
+plugins {
+        id 'org.openapi.generator' version '6.4.0'
+	id 'java'
+	id 'war'
+	id 'org.springframework.boot' version '3.1.2'
+	id 'io.spring.dependency-management' version '1.1.2'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	sourceCompatibility = '17'
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+        // required for code generation
+        implementation('org.openapitools:jackson-databind-nullable:+')
+        implementation('org.springframework.boot:spring-boot-starter-validation')
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+ext {
+  openApiGeneratedSourceDir = "${project.buildDir}/openapi-generated-source"
+  serviceSpec="${projectDir}/src/main/resources/openapi.yaml"
+}
+
+sourceSets {
+  main {
+    java {
+      srcDir "${openApiGeneratedSourceDir}/src/main/java"
+    }
+  }
+}
+
+task generateServerStubs(type: org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+  generatorName = 'spring'
+  inputSpec = serviceSpec
+  outputDir = openApiGeneratedSourceDir
+  apiPackage = 'com.example.openapidemo.controller'
+  modelPackage = 'com.example.openapidemo.generated.dto'
+  configOptions = [
+      'useTags'              : 'true',
+      'interfaceOnly'        : 'true',
+      'skipDefaultInterface' : 'true',
+      'dateLibrary'          : 'custom',
+      'useBeanValidation'    : 'true',
+      'performBeanValidation': 'true',
+      'documentationProvider': 'none',
+      'useSpringBoot3'       : 'true'
+  ]
+  typeMappings = [
+      'DateTime': 'Instant'
+  ]
+  importMappings = [
+      'Instant': 'java.time.Instant'
+  ]
+}
+
+compileJava.dependsOn(generateServerStubs)

@@ -1,0 +1,2215 @@
+---
+openapi: 3.0.1
+tags:
+  - name: SignalType
+    description: Operation is part of the SignalType API
+  - name: TransformType
+    description: Operation is part of the TransformType API
+  - name: ContainerType
+    description: Operation is part of the ContainerType API
+  - name: Container
+    description: Operation is part of the Container API
+  - name: Transform
+    description: Operation is part of the Transform API
+  - name: Parameter
+    description: Operation is part of the Parameter API
+info:
+  title: Cogito Platform Signal API
+  version: "4.0"
+  description: |
+    # API for Cogito::Platform::Signal service
+
+    The Signal service represents Signals, the Containers they are
+    stored in, and the Transforms relating derived Signals to their
+    source Signals.
+
+    --------
+
+    ## Signal URI Specification:
+
+    Individual Signals are identified by a Signal URI as described below.
+
+    ### Format:
+
+        scheme: 'cogito'
+        authority: (none)
+        namespace: 'platform/signal'
+        type: container
+
+        <scheme>:/<namespace>/<type>/...
+        cogito:/platform/signal/container/{containerId}/{containerFormat}[queryParameters]
+
+        pathParameters:
+
+          CONTAINER ID:
+
+            UUID such as 5febbea9-3ad1-4e38-9665-c63f36f37e5f
+
+          CONTAINER FORMAT:
+
+            One of:
+              wav
+              stf
+              json
+              csv
+
+        queryParameters:
+
+          CONTAINER INDEX:
+
+            ?index=[<uint>[/<uint>]*]
+
+          CLIP
+
+            ?offset=<uint>
+            ?duration=<uint>
+
+    ### Examples:
+
+    Audio Signal (Channel 0):
+
+        cogito:/platform/signal/container/5febbea9-3ad1-4e38-9665-c63f36f37e5f/wav?index=0
+
+    Audio Signal (Channel 0, Clip to end):
+
+        cogito:/platform/signal/container/c4f12902-92e6-497f-a558-482b0845f5fa/wav?index=0&offset=1000
+
+    Audio Container (Channel 0, Clip general)
+
+        cogito:/platform/signal/container/61e36a95-769e-4f16-953a-6afd1deffce3/wav?index=0&offset=1000&duration=506
+
+    Behavioral Notifications Signal (Single channel):
+
+        cogito:/platform/signal/container/fbafd07c-d1cd-4811-be01-6ff2c5ea9e9d/stf?index=4/5
+    
+    # Tags
+    
+    Tags are available on every top level resource (Container, ContainerType, SignalType, Transform, 
+    etc.) offered by Signal Service.  They allow clients to add simple, non-standard information to 
+    resources. Tags are key/value string pairs where the keys are limited to 255 characters and 
+    values are limited to 500 characters.
+    
+    # Statistics
+    
+    Statistics are specialized tags that allow clients to add arbitrary numeric data to Containers.
+    They are string/number key/value pairs where the keys are limited to 255 characters and the 
+    values are decimal numeric values.
+
+    --------
+  termsOfService: https://cogitocorp.com/api/terms.html
+  contact:
+    name: Cogito Corporation
+    email: info@cogitocorp.com
+    url: https://cogitocorp.com/api/contact.html
+  license:
+    name: Cogito Corporation License
+    url: https://cogitocorp.com/api/license.html
+
+
+
+servers:
+  - url: 'http://localhost:8080'
+    description: Generated server url
+
+  - url: "http://api.cogitocorp.test:8000"
+    description: Generated server url
+
+paths:
+
+  #----------------------------------------------------------------------
+  # SignalType
+  #
+  #----------------------------------------------------------------------
+  '/client/{clientId}/signalType':
+    parameters:
+      - $ref: '#/components/parameters/clientId'
+    post:
+      tags: [ SignalType ]
+      summary: Create a new SignalType
+      operationId: createSignalType
+      security:
+        - BearerAuth: [ platform-signal.signal-types.write ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/signal-type'
+        required: true
+      responses:
+        '201':
+          description: OK.  Operation successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/object-id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '409':
+          $ref: '#/components/responses/ConflictNotCreated'
+    put:
+      tags: [ SignalType ]
+      summary: Create a new SignalType or update if exist
+      operationId: createOrUpdateSignalType
+      security:
+        - BearerAuth: [ platform-signal.signal-types.write ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/signal-type'
+        required: true
+      responses:
+        '201':
+          description: OK.  Operation successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/object-id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    get:
+      tags: [ SignalType ]
+      summary: Filter SignalType
+      description: |
+        Finds and returns all objects of SignalType filtered by
+        specified query parameters.  If no query parameters, returns
+        all SignalType. The sort order of the results is undefined.
+      operationId: getSignalTypes
+      security:
+        - BearerAuth: [ platform-signal.signal-types.read ]
+      parameters:
+        - name: domainId
+          in: query
+          description: Filter SignalType by domainId
+          required: false
+          schema:
+            type: string
+        - name: domainSignalTypeId
+          in: query
+          description: Filter SignalType by domainSignalTypeId
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/tagsFilter'
+        - $ref: '#/components/parameters/pageSize'
+        - $ref: '#/components/parameters/pageSkip'
+      responses:
+        '200':
+          description: OK.  Operation successful.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/signal-type'
+              examples:
+                Variety of Types:
+                  summary: A variety of audio and application signal types
+                  value:
+                    - clientId: 'dialog'
+                      id: 44136153-DE66-4A69-B924-638F26756253
+                      created: '2020-06-25T21:29:24.581355Z'
+                      domainId: 'Cogito::Platform::Interaction'
+                      domainSignalTypeId: 'Interaction::TelephoneAudio'
+                      unitsPerSec: 8000
+                      tags:
+                        helpful_note: 'refer to me later'
+                        project: 'testing'
+                    - clientId: 'dialog'
+                      id: 42B6837F-61BF-4555-9AD5-95743CD4B0FA
+                      created: '2020-06-25T21:29:24.581355Z'
+                      domainId: 'Cogito::Application::Dialog'
+                      domainSignalTypeId: 'Dialog::speaking'
+                      tags:
+                        validity: 'only to be used on tuesdays'
+                        slogan: 'only the strong'
+                    - clientId: 'dialog'
+                      id: 7DEE9624-E2E6-4AE5-8008-16689EAF2860
+                      created: '2020-06-25T21:29:24.581355Z'
+                      domainId: 'Cogito::Application::Dialog'
+                      domainSignalTypeId: 'Dialog::cx-service-2.0.1'
+                      tags:
+                        warning: 'soon to be deprecated'
+                    - clientId: 'dialog'
+                      id: A9A4CABC-4CEA-4A78-BD9C-5D143B029128
+                      created: '2020-06-25T21:29:24.581355Z'
+                      domainId: 'Cogito::Application::Dialog'
+                      domainSignalTypeId: 'Dialog::extended-silence-notif'
+                      unitsPerSec: 8000
+                      tags: {}
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  '/client/{clientId}/signalType/{signalTypeId}':
+    parameters:
+      - $ref: '#/components/parameters/clientId'
+      - $ref: '#/components/parameters/signalTypeId'
+    get:
+      tags: [ SignalType ]
+      summary: Get SignalType by ID
+      operationId: getSignalType
+      security:
+        - BearerAuth: [ platform-signal.signal-types.read ]
+      responses:
+        '200':
+          description: OK.  Operation successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/signal-type'
+              examples:
+                Audio Signal:
+                  summary: Audio Signal
+                  value:
+                    clientId: 'dialog'
+                    id: 44136153-DE66-4A69-B924-638F26756253
+                    created: '2020-06-25T21:29:24.581355Z'
+                    domainId: 'Cogito::Platform::Interaction'
+                    domainSignalTypeId: 'Interaction::TelephoneAudio'
+                    unitsPerSec: 8000
+                    tags:
+                      helpful_note: 'refer to me later'
+                      project: 'testing'
+                Speaking Signal:
+                  summary: Speaking Signal
+                  value:
+                    clientId: 'dialog'
+                    id: 42B6837F-61BF-4555-9AD5-95743CD4B0FA
+                    created: '2020-06-25T21:29:24.581355Z'
+                    domainId: 'Cogito::Application::Dialog'
+                    domainSignalTypeId: 'Dialog::speaking'
+                    tags:
+                      validity: 'only to be used on tuesdays'
+                      slogan: 'only the strong'
+                CX Score:
+                  summary: Call Score Signal
+                  value:
+                    clientId: 'dialog'
+                    id: 7DEE9624-E2E6-4AE5-8008-16689EAF2860
+                    created: '2020-06-25T21:29:24.581355Z'
+                    domainId: 'Cogito::Application::Dialog'
+                    domainSignalTypeId: 'Dialog::cx-service-2.0.1'
+                    unitsPerSec: 8000
+                    tags: {}
+                Extended Silence Notification:
+                  summary: Notification Signal
+                  value:
+                    clientId: 'dialog'
+                    id: A9A4CABC-4CEA-4A78-BD9C-5D143B029128
+                    created: '2020-06-25T21:29:24.581355Z'
+                    domainId: 'Cogito::Application::Dialog'
+                    domainSignalTypeId: 'Dialog::extended-silence-notif'
+                    tags: {}
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  '/client/{clientId}/signalType/{signalTypeId}/tag':
+    parameters:
+      - $ref: '#/components/parameters/clientId'
+      - $ref: '#/components/parameters/signalTypeId'
+    patch:
+      tags: [ SignalType ]
+      summary: Add/update tags on SignalType. Tag keys are case-sensitive.
+      operationId: addTagsToSignalType
+      security:
+        - BearerAuth: [ platform-signal.signal-types.write ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/update-tags-request'
+            examples:
+              Application translation:
+                summary: Application tags object
+                description: |
+                  Application tags object so that it can search for
+                  categories of objects meaningful to itself only.
+                value:
+                  'Dialog::SignalCategory': behavior
+                  'Dialog::Package': tier-1
+              Data annotation:
+                summary: Data process tags object
+                description: |
+                  A data process tags objects so that it can recreate a
+                  data set accurately.
+                value:
+                  'Dataset': '2020-05-26T21:09:58+0000-CX-SCORE-102'
+      responses:
+        '200':
+          description: Add/update tag on signal type successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/object-id'
+              examples:
+                Tags Updated Response:
+                  description: Tags Updated Response
+                  value:
+                    id: 40a5a7fe-eb17-4835-9e00-27104a38c8da
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [ SignalType ]
+      summary: Remove tag from SignalType
+      operationId: deleteTagFromSignalType
+      security:
+        - BearerAuth: [ platform-signal.signal-types.write ]
+      parameters:
+        - $ref: '#/components/parameters/clientId'
+        - $ref: '#/components/parameters/signalTypeId'
+        - name: keys
+          in: query
+          description: list of tag keys to delete from object
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '204':
+          $ref: '#/components/responses/OKDeleted'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  # TransformType
+  #
+  #----------------------------------------------------------------------
+  '/client/{clientId}/transformType':
+    parameters:
+      - $ref: '#/components/parameters/clientId'
+    post:
+      tags: [ TransformType ]
+      summary: Create a new TransformType
+      operationId: createTransformType
+      security:
+        - BearerAuth: [ platform-signal.transform-types.write ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/transform-type'
+        required: true
+      responses:
+        '201':
+          description: OK.  Operation successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/object-id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '409':
+          $ref: '#/components/responses/ConflictNotCreated'
+    put:
+      tags: [ TransformType ]
+      summary: Create a new TransformType or update if exist
+      operationId: createOrUpdateTransformType
+      security:
+        - BearerAuth: [ platform-signal.transform-types.write ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/transform-type'
+        required: true
+      responses:
+        '201':
+          description: OK.  Operation successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/object-id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    get:
+      tags: [ TransformType ]
+      summary: Filter TransformType
+      description: Filters TransformType. The sort order of the results is undefined.
+      operationId: getTransformTypes
+      security:
+        - BearerAuth: [ platform-signal.transform-types.read ]
+      parameters:
+        - name: domainId
+          in: query
+          description: Filter TransformTypes by domainId
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/tagsFilter'
+        - $ref: '#/components/parameters/pageSize'
+        - $ref: '#/components/parameters/pageSkip'
+      responses:
+        '200':
+          description: TransformType request succeeded
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/transform-type'
+              examples:
+                Filtered Transform Types Response Example:
+                  summary: Filtered Transform Types Response Example
+                  value:
+                    - clientId: 'dialog'
+                      id: 3836f8a6-f507-473c-a92a-43ca4a3e6479
+                      created: '2020-06-09T21:14:10.248Z'
+                      domainId: 'Cogito::Interaction::Dialog-Sales-1.2'
+                      parameterSchema:
+                        protocol: YSD
+                        types:
+                          - type: dialog-sales-1.2
+                            isa: mapping
+                            mapping:
+                              required-keys:
+                                - foo
+                      tags: {}
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  '/client/{clientId}/transformType/{transformTypeId}':
+    parameters:
+      - $ref: '#/components/parameters/clientId'
+      - $ref: '#/components/parameters/transformTypeId'
+    get:
+      tags: [ TransformType ]
+      summary: Get TransformType by ID
+      operationId: getTransformType
+      security:
+        - BearerAuth: [ platform-signal.transform-types.read ]
+      responses:
+        '200':
+          description: Successfully retrieved single transform type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/transform-type'
+              examples:
+                Retrieve Transform Type Success:
+                  summary: Retrieve Transform Type Success
+                  value:
+                    clientId: 'dialog'
+                    id: 3836f8a6-f507-473c-a92a-43ca4a3e6479
+                    created: '2020-06-09T21:14:10.248Z'
+                    domainId: 'Cogito::Interaction::Dialog-Sales-1.2'
+                    parameterSchema:
+                      protocol: YSD
+                      types:
+                        - type: dialog-sales-1.2
+                          isa: mapping
+                          mapping:
+                            required-keys:
+                              - foo
+                    tags: {}
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  '/client/{clientId}/transformType/{transformTypeId}/tag':
+    parameters:
+      - $ref: '#/components/parameters/clientId'
+      - $ref: '#/components/parameters/transformTypeId'
+    patch:
+      tags: [ TransformType ]
+      summary: Add/update tags on TransformType. Tag keys are case-sensitive.
+      operationId: addTagsToTransformType
+      security:
+        - BearerAuth: [ platform-signal.transform-types.write ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/update-tags-request'
+            examples:
+              Application translation:
+                summary: Application tags object
+                description: |
+                  Application tags object so that it can search for
+                  categories of objects meaningful to itself only.
+                value:
+                  'Dialog::SignalCategory': behavior
+                  'Dialog::Package': tier-1
+              Data annotation:
+                summary: Data process tags object
+                description: |
+                  A data process tags objects so that it can recreate a
+                  data set accurately.
+                value:
+                  'Dataset': '2020-05-26T21:09:58+0000-CX-SCORE-102'
+      responses:
+        '200':
+          description: Add/update tag on transform type successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/object-id'
+              examples:
+                Tags Updated Response:
+                  description: Tags Updated Response
+                  value:
+                    id: 40a5a7fe-eb17-4835-9e00-27104a38c8da
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [ TransformType ]
+      summary: Remove tag from TransformType
+      operationId: deleteTagFromTransformType
+      security:
+        - BearerAuth: [ platform-signal.transform-types.write ]
+      parameters:
+        - $ref: '#/components/parameters/clientId'
+        - $ref: '#/components/parameters/transformTypeId'
+        - name: keys
+          in: query
+          description: list of tag keys to delete from object
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '204':
+          $ref: '#/components/responses/OKDeleted'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  # ContainerType
+  #
+  #----------------------------------------------------------------------
+  '/client/{clientId}/containerType':
+    parameters:
+      - $ref: '#/components/parameters/clientId'
+    post:
+      tags: [ ContainerType ]
+      summary: Create a new ContainerType
+      operationId: createContainerType
+      security:
+        - BearerAuth: [ platform-signal.container-types.write ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/container-type'
+        required: true
+      responses:
+        '201':
+          description: OK.  Operation successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/object-id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '409':
+          $ref: '#/components/responses/ConflictNotCreated'
+    put:
+      tags: [ ContainerType ]
+      summary: Create a new ContainerType or update if exist
+      operationId: createOrUpdateContainerType
+      security:
+        - BearerAuth: [ platform-signal.container-types.write ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/container-type'
+        required: true
+      responses:
+        '201':
+          description: OK.  Operation successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/object-id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    get:
+      tags: [ ContainerType ]
+      summary: Filter ContainerType
+      description: Filter ContainerType. The sort order of the results is undefined.
+      operationId: getContainerTypes
+      security:
+        - BearerAuth: [ platform-signal.container-types.read ]
+      parameters:
+        - name: name
+          in: query
+          description: Filter ContainerType by name
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/tagsFilter'
+        - $ref: '#/components/parameters/pageSize'
+        - $ref: '#/components/parameters/pageSkip'
+      responses:
+        '200':
+          description: Successfully retrieved a sequence of ContainerType UUIDs.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+              examples:
+                Filtered ContainerTypes Response:
+                  $ref: '#/components/examples/UUIDSequenceResponseExample'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  '/client/{clientId}/containerType/{containerTypeId}':
+    parameters:
+      - $ref: '#/components/parameters/clientId'
+      - $ref: '#/components/parameters/containerTypeId'
+    get:
+      tags: [ ContainerType ]
+      summary: Get ContainerType by ID
+      operationId: getContainerType
+      security:
+        - BearerAuth: [ platform-signal.container-types.read ]
+      responses:
+        '200':
+          description: Successfully retrieved a container type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/container-type'
+              examples:
+                Container Type Example:
+                  summary: Container Type Example
+                  value:
+                    clientId: 'dialog'
+                    id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    name: 'Behavioral Notifications Container for Mondays'
+                    created: '2020-06-16T22:20:29.462Z'
+                    format:
+                      type: stf
+                      contents:
+                        - - transformIndex: 0
+                            signalType: 162cd50a-af6b-40e2-9466-74077f4c50ad
+                          - transformIndex: 0
+                            signalType: ced97e23-f97d-49dc-9749-68bf97e6f053
+                        - - transformIndex: 0
+                            signalType: b91fb7e6-bc63-4d14-8b94-bb4d4a678e25
+                          - transformIndex: 0
+                            signalType: be4fc292-7fe2-41cc-9fe5-3b19e1575b8e
+                    transformTypeId:
+                      - ed2df223-a6b0-4311-addc-b198433ae572
+                    tags:
+                      myFavoriteProp1: myFavoriteProp1Value
+                      somethingThatShouldBeFoundLater: veryInteresting
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  '/client/{clientId}/containerType/{containerTypeId}/tag':
+    parameters:
+      - $ref: '#/components/parameters/clientId'
+      - $ref: '#/components/parameters/containerTypeId'
+    patch:
+      tags: [ ContainerType ]
+      summary: Add/update tags on ContainerType. Tag keys are case-sensitive.
+      operationId: addTagsToContainerType
+      security:
+        - BearerAuth: [ platform-signal.container-types.write ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/update-tags-request'
+            examples:
+              Application translation:
+                summary: Application tags object
+                description: |
+                  Application tags object so that it can search for
+                  categories of objects meaningful to itself only.
+                value:
+                  'Dialog::SignalCategory': behavior
+                  'Dialog::Package': tier-1
+              Data annotation:
+                summary: Data process tags object
+                description: |
+                  A data process tags objects so that it can recreate a
+                  data set accurately.
+                value:
+                  'Dataset': '2020-05-26T21:09:58+0000-CX-SCORE-102'
+      responses:
+        '200':
+          description: Add/update tag on container type successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/object-id'
+              examples:
+                Tags Updated Response:
+                  description: Tags Updated Response
+                  value:
+                    id: 40a5a7fe-eb17-4835-9e00-27104a38c8da
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [ ContainerType ]
+      summary: Remove tag from ContainerType
+      operationId: deleteTagFromContainerType
+      security:
+        - BearerAuth: [ platform-signal.container-types.write ]
+      parameters:
+        - $ref: '#/components/parameters/clientId'
+        - $ref: '#/components/parameters/containerTypeId'
+        - name: keys
+          in: query
+          description: list of tag keys to delete from object
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '204':
+          $ref: '#/components/responses/OKDeleted'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  # Container
+  #
+  #----------------------------------------------------------------------
+  '/tenant/{tenantId}/container':
+    parameters:
+      - $ref: '#/components/parameters/tenantId'
+    post:
+      tags: [ Container ]
+      summary: Create/Open Container
+      operationId: createContainer
+      security:
+        - BearerAuth: [ platform-signal.containers.write ]
+      parameters:
+        - name: createStream
+          in: query
+          description: Whether to create a new stream for the storageUri. The provided storageUri must be null if set to true.
+          required: false
+          schema:
+            type: boolean
+            default: true
+      requestBody:
+        $ref: '#/components/requestBodies/ContainerRequest'
+      responses:
+        '201':
+          description: Container creation success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/create-container-response'
+              examples:
+                Container Creation Success:
+                  description: Container Creation Success
+                  value:
+                    containerId: 21416f9d-5da1-445d-b301-e37c3c9031ee
+                    storageUri: 'persistent://cogito/stf/7ee0788e-71bb-4979-82ae-31fca574f59f'
+                    containerUri: 'cogito:/platform/signal/container/21416f9d-5da1-445d-b301-e37c3c9031ee/stf'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    get:
+      tags: [ Container ]
+      summary: Filter Containers
+      description: Filter Containers. The sort order of the results is undefined.
+      operationId: getContainers
+      security:
+        - BearerAuth: [ platform-signal.containers.read ]
+      parameters:
+        - name: storageUri
+          in: query
+          description: Filter Container by storageUri
+          required: false
+          schema:
+            type: string
+            format: uri
+        - name: storageUriExactMatch
+          in: query
+          description: |
+            Whether storage uri filter should use an exact match. Requires storageUri query parameter to also be set or 
+            else returns a 400 Bad Request.
+          required: false
+          schema:
+            type: boolean
+        - name: transformId
+          in: query
+          description: Filter Container by transformId
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/formatType'
+        - $ref: '#/components/parameters/tagsFilter'
+        - $ref: '#/components/parameters/statisticsFilter'
+        - $ref: '#/components/parameters/endAfterFilter'
+        - $ref: '#/components/parameters/endBeforeFilter'
+        - $ref: '#/components/parameters/pageSize'
+        - $ref: '#/components/parameters/pageSkip'
+      responses:
+        '200':
+          description: Successfully retrieved a sequence of Container UUIDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+              examples:
+                Filtered Containers Response:
+                  $ref: '#/components/examples/UUIDSequenceResponseExample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  '/tenant/{tenantId}/container/{containerId}':
+    parameters:
+      - $ref: '#/components/parameters/tenantId'
+      - $ref: '#/components/parameters/containerId'
+    patch:
+      tags: [ Container ]
+      summary: Update container
+      operationId: updateContainer
+      security:
+        - BearerAuth: [ platform-signal.containers.write ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/update-container-request'
+            examples:
+              Close Container:
+                value:
+                  end: '2020-06-10T17:03:14.107Z'
+        required: true
+      responses:
+        '201':
+          description: Container close successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/object-id'
+              examples:
+                Close Container:
+                  summary: Close Container response example
+                  value:
+                    id: 02f321e0-2d82-4fcd-b647-65789ea3f4a8
+        '404':
+          $ref: '#/components/responses/NotFound'
+    get:
+      tags: [ Container ]
+      summary: Get Container by ID
+      operationId: getContainer
+      security:
+        - BearerAuth: [ platform-signal.containers.read ]
+      responses:
+        '200':
+          description: Container retrieval successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/container'
+              examples:
+                Container Response:
+                  summary: Signals Container Response Example
+                  value:
+                    tenantId: cogito
+                    id: 02f321e0-2d82-4fcd-b647-65789ea3f4a8
+                    created: '2020-06-08T20:46:06.947Z'
+                    start: '2020-06-08T20:46:06.947Z'
+                    end: null
+                    type: 8160c554-6c8f-48af-9e3f-7ad8dea6a802
+                    containerType:
+                      id: 8160c554-6c8f-48af-9e3f-7ad8dea6a802
+                      clientId: 'dialog'
+                    typeValidated: false
+                    storageUri: 'persistent://cogito/stf/7ee0788e-71bb-4979-82ae-31fca574f59f'
+                    transform:
+                      - 520b294a-0c2c-423e-9562-8b240aa0434b
+                    tags:
+                      foo: bar
+                    statistics:
+                      customer-experience-all: 7.285018384
+                    signalEntityMappings:
+                      - signalIndex: '0'
+                        entityIds:
+                          - 771d92e3-68f0-447f-b046-29128dac33c5
+                          - f5340788-8e89-42c3-8874-af3a4cbc4e0a
+                      - signalIndex: '1'
+                        entityIds:
+                          - efccafed-2fb5-44c8-b85b-b6a9e6d70a00
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [ Container ]
+      summary: Delete Container by ID
+      operationId: deleteContainer
+      security:
+        - BearerAuth: [ platform-signal.containers.delete ]
+      responses:
+        '204':
+          $ref: '#/components/responses/OKDeleted'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  '/tenant/{tenantId}/container/{containerId}/storage-uri':
+    parameters:
+      - $ref: '#/components/parameters/tenantId'
+      - $ref: '#/components/parameters/containerId'
+    patch:
+      tags: [ Container ]
+      summary: Update container storageURI and delete data at previous storage URI. If storageURI is Null value, this indicates that the Pulsar topic no longer exists
+      operationId: updateContainerStorageUri
+      security:
+        - BearerAuth: [ platform-signal.containers.write ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/update-container-storage-request'
+            examples:
+              Update storageURI:
+                value:
+                  storageUri: 'persistent://cogito/wav/40b2619a-0acf-4b34-a62f-237b5a2d6e19'
+        required: true
+      responses:
+        '200':
+          description: StorageURI update successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/object-id'
+              examples:
+                Update storageURI:
+                  summary: Update storageURI response example
+                  value:
+                    id: 02f321e0-2d82-4fcd-b647-65789ea3f4a8
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: |
+            Conflict. Container storageUri cannot be updated if container is still open.
+
+  #----------------------------------------------------------------------
+  '/tenant/{tenantId}/container/{containerId}/tag':
+    parameters:
+      - $ref: '#/components/parameters/tenantId'
+      - $ref: '#/components/parameters/containerId'
+    patch:
+      tags: [ Container ]
+      summary: Add/update tags on Container. Tag keys are case-sensitive.
+      operationId: addTagsToContainer
+      security:
+        - BearerAuth: [ platform-signal.containers.write ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/update-tags-request'
+            examples:
+              Application translation:
+                summary: Application tags object
+                description: |
+                  Application tags object so that it can search for
+                  categories of objects meaningful to itself only.
+                value:
+                  'Dialog::SignalCategory': behavior
+                  'Dialog::Package': tier-1
+              Data annotation:
+                summary: Data process tags object
+                description: |
+                  A data process tags objects so that it can recreate a
+                  data set accurately.
+                value:
+                  'Dataset': '2020-05-26T21:09:58+0000-CX-SCORE-102'
+      responses:
+        '200':
+          description: Add/update tag on container successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/object-id'
+              examples:
+                Tags Updated Response:
+                  description: Tags Updated Response
+                  value:
+                    id: 40a5a7fe-eb17-4835-9e00-27104a38c8da
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [ Container ]
+      summary: Remove tag from Container
+      operationId: deleteTagFromContainer
+      security:
+        - BearerAuth: [ platform-signal.containers.write ]
+      parameters:
+        - $ref: '#/components/parameters/tenantId'
+        - $ref: '#/components/parameters/containerId'
+        - name: keys
+          in: query
+          description: list of tag keys to delete from object
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '204':
+          $ref: '#/components/responses/OKDeleted'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  '/tenant/{tenantId}/container/{containerId}/statistic':
+    parameters:
+      - $ref: '#/components/parameters/tenantId'
+      - $ref: '#/components/parameters/containerId'
+    patch:
+      tags: [ Container ]
+      summary: Add/update statistics on Container. Statistic keys are case-sensitive.
+      operationId: addStatisticsToContainer
+      security:
+        - BearerAuth: [ platform-signal.containers.write ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/update-statistics-request'
+            examples:
+              Full Call Stats:
+                summary: Interaction full call statistics
+                description: Signal statistics added to an interaction after it ends
+                value:
+                  customer-experience-all: 7.28482982
+                  avg-conv-engagement_v1_1-transf: 4.289829342
+      responses:
+        '200':
+          description: Add/update statistic on container successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/object-id'
+              examples:
+                Statistics Updated Response:
+                  description: Statistics Updated Response
+                  value:
+                    id: 50886989-6bc8-4fca-b9b7-a045e0a3efa7
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [ Container ]
+      summary: Remove statistics from Container
+      operationId: deleteStatisticsFromContainer
+      security:
+        - BearerAuth: [ platform-signal.containers.write ]
+      parameters:
+        - $ref: '#/components/parameters/tenantId'
+        - $ref: '#/components/parameters/containerId'
+        - name: keys
+          in: query
+          description: list of statistic keys to delete from object
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '204':
+          $ref: '#/components/responses/OKDeleted'
+        '404':
+          description: The requested container does not exist.
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+
+  #----------------------------------------------------------------------
+  # Transform
+  #
+  #----------------------------------------------------------------------
+  '/tenant/{tenantId}/transform':
+    parameters:
+      - $ref: '#/components/parameters/tenantId'
+    get:
+      tags: [ Transform ]
+      summary: Filter Transforms
+      description: Filter Transforms. The sort order of the results is undefined.
+      operationId: getTransforms
+      security:
+        - BearerAuth: [ platform-signal.transforms.read ]
+      parameters:
+        - name: inputSignal
+          in: query
+          description: |
+            Filter Transforms to those which have the specified inputSignal URI in their list of
+            inputSignals
+          required: false
+          schema:
+            type: string
+            format: uri
+        - name: transformTypeId
+          in: query
+          description: |
+            Filter Transforms to those which have the specified transformTypeId
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/tagsFilter'
+        - $ref: '#/components/parameters/pageSize'
+        - $ref: '#/components/parameters/pageSkip'
+      responses:
+        '200':
+          description: Get transforms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/transform'
+              examples:
+                Get Transforms:
+                  value:
+                    - id: 29c5a07c-bc1b-4189-b8e9-c9287916acb4
+                      created: '2020-07-16T21:31:10.468Z'
+                      transformTypeId: bcfef201-6ca6-4218-a713-cf1f2b6a31c6
+                      inputSignals:
+                        - 'cogito:/platform/signal/container/3c53e6fb-db0f-4160-b61c-ed7fe8b3f0d7/wav?index=0'
+                      parameterId: 1ec059fb-fa36-48c5-82c1-d5c1a994d1e6
+                      tags:
+                        environment: dev
+                        time_of_year: winter
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  '/tenant/{tenantId}/transform/{transformId}':
+    parameters:
+      - $ref: '#/components/parameters/tenantId'
+      - name: transformId
+        in: path
+        description: ID of the Signal Transform
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [ Transform ]
+      summary: Get Transform by ID
+      operationId: getTransform
+      security:
+        - BearerAuth: [ platform-signal.transforms.read ]
+      responses:
+        '200':
+          description: Get transform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/transform'
+              examples:
+                Get Transform:
+                  value:
+                    id: 29c5a07c-bc1b-4189-b8e9-c9287916acb4
+                    created: '2020-07-16T21:31:10.468Z'
+                    transformTypeId: bcfef201-6ca6-4218-a713-cf1f2b6a31c6
+                    inputSignals:
+                      - 'cogito:/platform/signal/container/3c53e6fb-db0f-4160-b61c-ed7fe8b3f0d7/wav?index=0'
+                    parameterId: 1ec059fb-fa36-48c5-82c1-d5c1a994d1e6
+                    tags:
+                      environment: dev
+                      time_of_year: winter
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  # Parameter
+  #
+  #----------------------------------------------------------------------
+  '/tenant/{tenantId}/parameter':
+    parameters:
+      - $ref: '#/components/parameters/tenantId'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/pageSkip'
+    get:
+      tags: [ Parameter ]
+      summary: Filter Parameters
+      description: Filter Parameters. The sort order of the results is undefined.
+      operationId: getParameters
+      security:
+        - BearerAuth: [ platform-signal.parameters.read ]
+      responses:
+        '200':
+          description: Get parameters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/parameter'
+              examples:
+                Get Parameters:
+                  value:
+                    - id: ff9b0f33-355a-42c7-8880-179579f75657
+                      created: '2020-07-16T22:06:05.783Z'
+                      transformTypeId: 16b903e8-57c9-4fa4-96f9-e0e7b747c518
+                      value:
+                        foo: 25
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  #----------------------------------------------------------------------
+  '/tenant/{tenantId}/parameter/{parameterId}':
+    parameters:
+      - $ref: '#/components/parameters/tenantId'
+      - name: parameterId
+        in: path
+        description: ID of the Signal Parameter
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [ Parameter ]
+      summary: Get Parameter by ID
+      operationId: getParameter
+      security:
+        - BearerAuth: [ platform-signal.parameters.read ]
+      responses:
+        '200':
+          description: Get transform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/parameter'
+              examples:
+                Get Parameter:
+                  value:
+                    id: ff9b0f33-355a-42c7-8880-179579f75657
+                    created: '2020-07-16T22:06:05.783Z'
+                    transformTypeId: 16b903e8-57c9-4fa4-96f9-e0e7b747c518
+                    value:
+                      foo: 25
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+#------------------------------------------------------------------------
+# COMPONENTS
+#------------------------------------------------------------------------
+components:
+  #----------------------------------------------------------------------
+  # Security
+  #
+  #----------------------------------------------------------------------
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  #----------------------------------------------------------------------
+  # Parameter
+  #
+  #----------------------------------------------------------------------
+  parameters:
+    tenantId:
+      name: tenantId
+      in: path
+      description: ID of Tenant owning the object
+      required: true
+      schema:
+        type: string
+
+    clientId:
+      name: clientId
+      in: path
+      description: Client system registering/owning the object
+      required: true
+      schema:
+        type: string
+
+    containerId:
+      name: containerId
+      in: path
+      description: ID of the Signal Container
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    containerTypeId:
+      name: containerTypeId
+      in: path
+      description: ID of the Signal ContainerType
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    start:
+      name: start
+      in: query
+      description: Start date of object for data migration
+      schema:
+        type: string
+        format: date-time
+
+    endAfterFilter:
+      name: endAfter
+      in: query
+      description: query for objects with an end time after the given time
+      schema:
+        type: string
+        format: date-time
+
+    endBeforeFilter:
+      name: endBefore
+      in: query
+      description: query for objects with an end time before the given time
+      required: false
+      schema:
+        type: string
+        format: date-time
+
+    formatType:
+      name: formatType
+      in: query
+      description: Filter Container by formatType
+      required: false
+      schema:
+        $ref: '#/components/schemas/format-type'
+
+    signalTypeId:
+      name: signalTypeId
+      in: path
+      description: ID of the SignalType
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    transformTypeId:
+      name: transformTypeId
+      in: path
+      description: ID of the TransformType
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    transformId:
+      name: transformId
+      in: path
+      description: ID of the Transform
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    parameterId:
+      name: parameterId
+      in: path
+      description: ID of the Parameter
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    tagsFilter:
+      name: tags
+      in: query
+      description: Tags attached to the Entity to search by. Example Query would be "?tags=name,James%20Bond&tags=martiniPref,shaken"
+      required: false
+      schema:
+        # Ideally, we would use an object representation here.  See https://swagger.io/docs/specification/serialization/
+        # for ways of serializing query parameters in OpenAPI 3.0.
+        # Unfortunately, the code generator doesn't work with object type because of this bug:
+        # https://github.com/OpenAPITools/openapi-generator/issues/8352
+        type: array
+        items:
+          type: string
+        example:
+          tags:
+            - "name,James Bond"
+            - "martiniPref,shaken"
+
+    statisticsFilter:
+      name: statistics
+      in: query
+      description: Statistics attached to the entity to search by. Example Query would be "?statistics=customer-experience-all,7.68&statistics=avg-conv-engagement_v1_1-transf,4.29"
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+        example:
+          statistics:
+            - "customer-experience-all,7.68"
+            - "avg-conv-engagement_v1_1-transf,4.29"
+
+    pageSize:
+      name: pageSize
+      in: query
+      description: The size of the page to return
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 10000
+
+    pageSkip:
+      name: pageSkip
+      in: query
+      description: page to skip to in the list of objects to return
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 10000
+
+
+  #----------------------------------------------------------------------
+  # Schema
+  #
+  #----------------------------------------------------------------------
+  schemas:
+
+    container-type:
+      description: Schema for a container type response
+      type: object
+      properties:
+        clientId:
+          type: string
+          readOnly: true
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        format:
+          $ref: '#/components/schemas/format'
+        transformTypeIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          readOnly: true
+        transformTypeDomainIds:
+          type: array
+          items:
+            type: string
+          writeOnly: true
+        tags:
+          $ref: '#/components/schemas/tag-value'
+      required:
+        - name
+        - format
+
+    transform-type:
+      description: Schema for a transform type
+      type: object
+      properties:
+        clientId:
+          type: string
+          readOnly: true
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        domainId:
+          type: string
+        parameterSchema:
+          type: object
+        tags:
+          $ref: '#/components/schemas/tag-value'
+      required:
+        - domainId
+
+    signal-type:
+      description: Schema for a signal type
+      type: object
+      properties:
+        clientId:
+          type: string
+          readOnly: true
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        domainId:
+          type: string
+          description: |
+            This will define a namespace per client within which signal types will exist.  For
+            derived signals this will describe the transformation used to create the signals and
+            should be a value used as the domainId for a TransformType.  For telephony
+            audio signals, this will be a client-owned string within which signal types will be
+            defined.
+        domainSignalTypeId:
+          type: string
+          description: |
+            Uniquely identifies this signal type within the domainId per clientId.  For telephony
+            audio containers this string will specify the audio channel.  For derived signal
+            containers, this string will specify an output port of the particular transformation
+            with which this signal type is associated.
+        unitsPerSec:
+          type: integer
+          minimum: 0
+        tags:
+          $ref: '#/components/schemas/tag-value'
+      required:
+        - domainId
+        - domainSignalTypeId
+
+    container:
+      type: object
+      properties:
+        tenantId:
+          type: string
+        id:
+          type: string
+          format: uuid
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        type:
+          type: string
+          format: uuid
+        containerType:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            clientId:
+              type: string
+        typeValidated:
+          type: boolean
+          readOnly: true
+          default: false
+        storageUri:
+          type: string
+          format: uri
+        transform:
+          type: array
+          items:
+            type: string
+            format: uuid
+        signalEntityMappings:
+          type: array
+          items:
+            title: ContainerSignalEntityMappings
+            type: object
+            properties:
+              signalIndex:
+                type: string
+              entityIds:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+        tags:
+          $ref: '#/components/schemas/tag-value'
+        statistics:
+          $ref: '#/components/schemas/statistic-value'
+      required:
+        - tenantId
+        - id
+        - created
+        - start
+        - type
+        - storageUri
+        - tags
+        - statistics
+
+    container-create-request:
+      type: object
+      properties:
+        clientId:
+          type: string
+        id:
+          type: string
+          format: uuid
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+        statistics:
+          type: object
+          additionalProperties:
+            type: number
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        storageUri:
+          type: string
+          format: uri
+        typeName:
+          type: string
+        transform:
+          type: array
+          items:
+            title: ContainerCreateRequestTransform
+            type: object
+            properties:
+              transformTypeDomainId:
+                type: string
+              id:
+                type: string
+                format: uuid
+              inputSignals:
+                type: array
+                items:
+                  type: string
+                  format: uri
+              parameter:
+                title: ContainerCreateRequestParameter
+                type: object
+                properties:
+                  value:
+                    type: object
+              tags:
+                type: object
+                additionalProperties:
+                  type: string
+        signalEntityMappings:
+          type: array
+          items:
+            title: ContainerSignalEntityMappings
+            type: object
+            properties:
+              signalIndex:
+                type: string
+              entityIds:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+
+      required:
+        - start
+        - typeName
+        - clientId
+
+    transform:
+      description: Schema for a transform
+      type: object
+      properties:
+        tenantId:
+          type: string
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        transformTypeId:
+          type: string
+          format: uuid
+        inputSignals:
+          type: array
+          items:
+            type: string
+            format: uri
+        parameterId:
+          type: string
+          format: uuid
+        tags:
+          $ref: '#/components/schemas/tag-value'
+      required:
+        - id
+        - created
+        - transformTypeId
+        - inputSignals
+
+    parameter:
+      description: Schema for a parameter
+      type: object
+      properties:
+        tenantId:
+          type: string
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        transformTypeId:
+          type: string
+          format: uuid
+        value:
+          type: object
+      required:
+        - id
+        - created
+        - transformTypeId
+        - value
+
+    tag-value:
+      description: Schema for tags for use in requests or responses
+      type: object
+      additionalProperties:
+        type: string
+
+    statistic-value:
+      description: Schema for statistics for use in requests or responses
+      type: object
+      additionalProperties:
+        type: number
+
+    format:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        type:
+          $ref: '#/components/schemas/format-type'
+        contents:
+          type: array
+          minItems: 1
+          items:
+            type: object
+      required:
+        - type
+        - contents
+
+    wav-format:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        type:
+          type: string
+          enum:
+            - wav
+        contents:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/container-signal-type'
+      required:
+        - id
+        - type
+        - contents
+
+    stf-format:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        type:
+          type: string
+          enum:
+            - stf
+        contents:
+          type: array
+          minItems: 1
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/container-signal-type'
+      required:
+        - id
+        - type
+        - contents
+
+    json-format:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        type:
+          type: string
+          enum:
+            - json
+        contents:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/container-signal-type'
+      required:
+        - id
+        - type
+        - contents
+
+    csv-format:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        type:
+          type: string
+          enum:
+            - csv
+        contents:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/container-signal-type'
+      required:
+        - id
+        - type
+        - contents
+
+    format-type:
+      type: string
+      enum: [ wav, stf, csv, json ]
+
+    object-id:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+      required:
+        - id
+      additionalProperties: false
+      example:
+        id: 0FF34134-6B89-4FB1-88AA-296AE5DEE6D4
+
+    container-signal-type:
+      type: object
+      properties:
+        transformIndex:
+          type: integer
+          minimum: 0
+        signalType:
+          type: object
+          properties:
+            domainId:
+              type: string
+            domainSignalTypeId:
+              type: string
+            unitsPerSec:
+              type: integer
+
+    create-container-response:
+      type: object
+      properties:
+        containerId:
+          type: string
+          format: uuid
+        storageUri:
+          type: string
+          format: uri
+        containerUri:
+          type: string
+          format: uri
+        transform:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+        - containerId
+
+    update-container-request:
+      type: object
+      properties:
+        end:
+          type: string
+          format: date-time
+      required:
+        - end
+
+    update-container-storage-request:
+      type: object
+      properties:
+        storageUri:
+          type: string
+          format: uri
+
+    update-tags-request:
+      type: object
+      additionalProperties:
+        type: string
+
+    update-statistics-request:
+      type: object
+      additionalProperties:
+        type: number
+
+  #----------------------------------------------------------------------
+  # Request Body
+  #
+  #----------------------------------------------------------------------
+  requestBodies:
+
+    ContainerRequest:
+      description: Request to create a new container
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/container-create-request'
+          examples:
+            Derived signals container create request:
+              summary: |
+                Create a container with a transform, typically representing a behavioral signals
+                container
+              value:
+                clientId: 'cogito-dialog'
+                tags:
+                  - key: 'tagKey1'
+                    value: 'tagValue1'
+                  - key: 'tagKey2'
+                    value: 'tagValue2'
+                statistics:
+                  - key: 'customer-experience-all'
+                    value: 7.625
+                start: '2020-06-05T15:48:07.906Z'
+                typeName: 'Cogito::Compute::Sales'
+                transform:
+                  - transformTypeDomainId: 'Cogito::Interaction::Dialog-Sales-1.2'
+                    inputSignals:
+                      - 'cogito:/platform/signal/container/5c7285d5-a3b5-4d6e-a828-c66e630e191c/wav?index=0'
+                      - 'cogito:/platform/signal/container/5c7285d5-a3b5-4d6e-a828-c66e630e191c/wav?index=1'
+                    parameter: {}
+                    tags:
+                      - key: 'tagKey3'
+                        value: 'tagValue3'
+                      - key: 'tagKey4'
+                        value: 'tagValue4'
+            Source signals container create request:
+              summary: Create a container for source signals
+              value:
+                clientId: 'cogito-dialog'
+                start: '2020-06-05T15:48:07.906Z'
+                typeName: 'Cogito::Dialog::DemoAudio'
+                signalEntityMappings:
+                  - signalIndex: '0'
+                    entityIds:
+                      - 771d92e3-68f0-447f-b046-29128dac33c5
+                      - f5340788-8e89-42c3-8874-af3a4cbc4e0a
+                  - signalIndex: '1'
+                    entityIds:
+                      - efccafed-2fb5-44c8-b85b-b6a9e6d70a00
+            Source signals container create migration request:
+              summary: Create a container as a migration form with end and storageUri parameters
+              value:
+                clientId: 'cogito-dialog'
+                start: '2020-06-05T15:48:07.906Z'
+                end: '2020-06-05T15:58:07.906Z'
+                storageUri: 'persistent://cogito/stf/7ee0788e-71bb-4979-82ae-31fca574f59f'
+
+  #----------------------------------------------------------------------
+  # Response
+  #
+  #----------------------------------------------------------------------
+  responses:
+    # 201 on POST, 200 on GET
+    OKGetContainerResponse:
+      description: Container create response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              type:
+                type: string
+                format: uuid
+              created:
+                type: string
+                format: date-time
+              start:
+                type: string
+                format: date-time
+              end:
+                type: string
+                format: date-time
+              transform:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+              storageUri:
+                type: string
+                format: uri
+              tags:
+                $ref: '#/components/schemas/tag-value'
+              statistic:
+                $ref: '#/components/schemas/statistic-value'
+            required:
+              - id
+              - type
+              - created
+              - start
+              - end
+              - storageUri
+              - tag
+              - statistic
+
+    # 204
+    OKDeleted:
+      description: OK.  Match found, resource deleted.
+
+    # 400
+    BadRequest:
+      description: Bad Request.  There is a problem with the request body.
+      content:
+        application/json:
+          schema:
+            type: object
+          examples:
+            Received Request Body:
+              summary: Received Request Body
+              description: |
+                There is no specific schema here because this response
+                will simply return what the service received in the
+                corresponding request body.  It is possible that the
+                request is bad because the request body is bad,
+                mal-formed with respect to schema or JSON itself.  Our
+                standard is that request bodies are always JSON
+                objects, so an object should be expected (but not
+                guaranteed).
+              value: { Associated request body goes here: {} }
+
+    # 404
+    NotFound:
+      description: Not Found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/object-id'
+
+    # 409
+    ConflictNotDeleted:
+      description: |
+        Conflict.  Specified resource was found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/object-id'
+    # 409
+    ConflictNotCreated:
+      description: |
+        Conflict.  Specified resource was found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/object-id'
+
+    # 500
+    ServerError:
+      description: Internal Server Error.
+
+  #----------------------------------------------------------------------
+  # Examples
+  #
+  #----------------------------------------------------------------------
+  examples:
+    UUIDSequenceResponseExample:
+      value:
+        - 02f321e0-2d82-4fcd-b647-65789ea3f4a8
+        - 8160c554-6c8f-48af-9e3f-7ad8dea6a802
+        - 520b294a-0c2c-423e-9562-8b240aa0434b
