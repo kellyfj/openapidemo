@@ -25,6 +25,9 @@ dependencies {
         // required for code generation
         implementation('org.openapitools:jackson-databind-nullable:+')
         implementation('org.springframework.boot:spring-boot-starter-validation')
+
+        // For Client
+        implementation("org.springframework.boot:spring-boot-starter-webflux")
 }
 
 tasks.named('test') {
@@ -32,14 +35,14 @@ tasks.named('test') {
 }
 
 ext {
-  openApiGeneratedSourceDir = "${project.buildDir}/openapi-generated-source"
   serviceSpec="${projectDir}/src/main/resources/openapi.yaml"
 }
 
 sourceSets {
   main {
     java {
-      srcDir "${openApiGeneratedSourceDir}/src/main/java"
+      srcDir "${project.buildDir}/openapi-generated-server-source/src/main/java"
+      srcDir "${project.buildDir}/openapi-generated-client-source/src/main/java"
     }
   }
 }
@@ -47,18 +50,19 @@ sourceSets {
 task generateServerStubs(type: org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
   generatorName = 'spring'
   inputSpec = serviceSpec
-  outputDir = openApiGeneratedSourceDir
+  outputDir = "${project.buildDir}/openapi-generated-server-source"
   apiPackage = 'com.example.openapidemo.controller'
   modelPackage = 'com.example.openapidemo.generated.dto'
   configOptions = [
-      'useTags'              : 'true',
-      'interfaceOnly'        : 'true',
-      'skipDefaultInterface' : 'true',
+      'containerDefaultToNull' : 'true',
       'dateLibrary'          : 'custom',
-      'useBeanValidation'    : 'true',
-      'performBeanValidation': 'true',
       'documentationProvider': 'none',
-      'useSpringBoot3'       : 'true'
+      'interfaceOnly'        : 'true',
+      'performBeanValidation': 'true',
+      'skipDefaultInterface' : 'true',
+      'useBeanValidation'    : 'true',
+      'useSpringBoot3'       : 'true',
+      'useTags'              : 'true',
   ]
   typeMappings = [
       'DateTime': 'Instant'
@@ -69,3 +73,31 @@ task generateServerStubs(type: org.openapitools.generator.gradle.plugin.tasks.Ge
 }
 
 compileJava.dependsOn(generateServerStubs)
+
+task generateClientCode(type: org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+  generatorName = "java"
+  inputSpec = serviceSpec
+  outputDir = "${buildDir}/openapi-generated-client-source"
+  groupId = "${group}"
+  id = 'signal-service-client-sdk'
+  version = "${version}"
+  apiPackage = 'com.example.openapi.client.api'
+  modelPackage = 'com.example.openapi.client.model'
+  enablePostProcessFile = true
+  library = 'webclient'
+  skipOverwrite = false
+  configOptions = [
+      'containerDefaultToNull' : 'true',
+      'dateLibrary'            : 'custom',
+      'useJakartaEe'           : 'true',
+      'useSpringBoot3'         : 'true',
+  ]
+  typeMappings = [
+      'DateTime': 'Instant'
+  ]
+  importMappings = [
+      'Instant': 'java.time.Instant'
+  ]
+}
+compileJava.dependsOn(generateClientCode)
+
